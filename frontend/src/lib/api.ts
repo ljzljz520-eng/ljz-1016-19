@@ -1,6 +1,22 @@
-import { ApiResponse, LoginResponse, DashboardStats, Server, Alert, Task, OperationLog } from '@/types';
+import { ApiResponse, LoginResponse, LogoutResponse, DashboardStats, Server, Alert, Task, OperationLog } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+// HTTP 状态码对应的友好提示（用于后端未返回统一 JSON 结构的兜底场景）
+const HTTP_ERROR_MESSAGES: Record<number, string> = {
+  400: '请求参数错误',
+  401: '登录状态已失效，请重新登录',
+  403: '没有访问权限，请重新登录后再试',
+  404: '请求的资源不存在',
+  405: '请求方法不允许',
+  500: '服务器开小差了，请稍后重试',
+  502: '服务暂时不可用，请稍后重试',
+  503: '服务暂时不可用，请稍后重试',
+};
+
+function fallbackMessage(status: number): string {
+  return HTTP_ERROR_MESSAGES[status] || '服务异常，请稍后重试';
+}
 
 class ApiClient {
   private baseUrl: string;
@@ -38,6 +54,18 @@ class ApiClient {
         headers,
       });
 
+      // 防御：后端若返回非 JSON（如 HTML 错误页），不直接暴露给用户，
+      // 按 HTTP 状态码转换为统一结构和友好提示
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        return {
+          success: false,
+          code: response.status,
+          message: fallbackMessage(response.status),
+          data: null as unknown as T,
+        };
+      }
+
       const data = await response.json();
       return data as ApiResponse<T>;
     } catch (error) {
@@ -59,8 +87,8 @@ class ApiClient {
   }
 
   // 登出
-  async logout(): Promise<ApiResponse<null>> {
-    return this.request<null>('/auth/logout/', {
+  async logout(): Promise<ApiResponse<LogoutResponse>> {
+    return this.request<LogoutResponse>('/auth/logout/', {
       method: 'POST',
     });
   }

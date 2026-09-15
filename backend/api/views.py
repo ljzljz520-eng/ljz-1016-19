@@ -20,6 +20,10 @@ from .authentication import generate_token
 
 logger = logging.getLogger(__name__)
 
+# 认证相关跳转目标（与前端路由约定）
+LOGIN_REDIRECT_PATH = '/dashboard'
+LOGOUT_REDIRECT_PATH = '/login'
+
 
 def api_response(success: bool, data=None, message: str = '', code: int = 200):
     """统一API响应格式"""
@@ -28,7 +32,7 @@ def api_response(success: bool, data=None, message: str = '', code: int = 200):
         'code': code,
         'message': message,
         'data': data,
-    }, status=code if code < 400 else code)
+    }, status=code)
 
 
 @api_view(['POST'])
@@ -62,10 +66,11 @@ def login_view(request):
     )
     
     logger.info(f"用户 {username} 登录成功")
-    
+
     return api_response(True, data={
         'token': token,
-        'user': UserSerializer(user).data
+        'user': UserSerializer(user).data,
+        'redirect': LOGIN_REDIRECT_PATH,
     }, message='登录成功')
 
 
@@ -87,7 +92,7 @@ def logout_view(request):
         user=request.user,
         ip_address=get_client_ip(request)
     )
-    return api_response(True, message='登出成功')
+    return api_response(True, data={'redirect': LOGOUT_REDIRECT_PATH}, message='登出成功')
 
 
 @api_view(['GET'])

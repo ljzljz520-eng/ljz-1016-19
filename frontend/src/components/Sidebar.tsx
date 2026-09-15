@@ -42,10 +42,15 @@ export function Sidebar() {
 
   const handleLogout = async () => {
     try {
-      await api.logout();
+      const response = await api.logout();
       clearAuth();
-      toast.success('已安全退出');
-      router.push('/login');
+      if (response.success) {
+        toast.success(response.message || '已安全退出');
+        router.push(response.data?.redirect || '/login');
+      } else {
+        toast.error(response.message || '登出失败');
+        router.push('/login');
+      }
     } catch {
       clearAuth();
       router.push('/login');

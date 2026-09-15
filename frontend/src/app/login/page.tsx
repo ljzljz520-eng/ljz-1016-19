@@ -54,11 +54,11 @@ export default function LoginPage() {
     
     try {
       const response = await api.login(username, password);
-      
+
       if (response.success && response.data) {
         setAuth(response.data.user, response.data.token);
-        toast.success('登录成功，欢迎回来！');
-        router.push('/dashboard');
+        toast.success(response.message || '登录成功，欢迎回来！');
+        router.push(response.data.redirect || '/dashboard');
       } else {
         toast.error(response.message || '登录失败');
       }

@@ -96,4 +96,10 @@ export interface ApiResponse<T> {
 export interface LoginResponse {
   token: string;
   user: User;
+  redirect: string;
+}
+
+// 登出响应
+export interface LogoutResponse {
+  redirect: string;
 }
